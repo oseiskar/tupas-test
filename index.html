@@ -55,9 +55,10 @@
         </div>
     </body>
 <script>
-    
-    $(document).ready(function(){
-        
+   "use strict";
+
+   $(document).ready(function(){
+
         $('.tupas-request').hide();
         $('.tupas-response').hide();
         
@@ -68,8 +69,8 @@
         $('#B02K_CUSTID_label').addClass('text-primary');
         $('#A01Y_RETLINK_label').addClass('text-primary');
         
-        $('#tupas-request-tab').click(function() { setRequestType('request') });
-        $('#tupas-response-tab').click(function() { setRequestType('response') });
+        $('#tupas-request-tab').click(function() { setRequestType('request'); });
+        $('#tupas-response-tab').click(function() { setRequestType('response'); });
         
         writeBankList($('#bank-list'));
         
@@ -78,13 +79,12 @@
             $('#tupas-response-form').find('input[type=submit]').removeClass('disabled');
         });
         
-        $('#request-url').change(function (el){
+        $('#request-url').change(function (){
             $('#tupas-request-form').attr('action', $('#request-url').val());
             $('#tupas-request-form').find('input[type=submit]').removeClass('disabled');
         });
         
         $('#A01Y_RETLINK').change(function() {
-            responsePath = $('#response-path').val();
             $('#response-url').val($('#A01Y_RETLINK').val()).change();
         });
         $('#A01Y_RETLINK').change();
@@ -101,46 +101,45 @@
     
     function writeForm(form, fieldsWithoutHash, hashField) {
         
-        fieldAndHash =  fieldsWithoutHash.concat([[hashField, '']]);
+        var fieldAndHash =  fieldsWithoutHash.concat([[hashField, '']]);
         
         function makeHashComputer(fields, formElement) {
             return function () {
             
-                shared_secret = $('#secret-key').val();
+                var str = $.map(fields, function (field) {
+                    return $('#'+field[0]).val();
+                }).join('&') + '&';
                 
-                str = '';
-                for (i in fields)
-                    str += $('#'+fields[i][0]).val() + '&';
-                    
                 //console.log(str);
-                hash = CryptoJS.SHA256(str + shared_secret + '&').toString().toUpperCase();
+                var sharedSecret = $('#secret-key').val();
+                var hash = CryptoJS.SHA256(str + sharedSecret + '&').toString().toUpperCase();
                 //console.log(hash);
                 
                 formElement.find('.hash-field').val(hash);
-            }
+            };
         }
         
-        computeHash = makeHashComputer(fieldsWithoutHash.slice(), form);
+        var computeHash = makeHashComputer(fieldsWithoutHash.slice(), form);
         
-        for (i in fieldAndHash) {
-            name_and_default = fieldAndHash[i];
-            name = name_and_default[0];
-            def = name_and_default[1];
-            input = $('<input/>', {
+        $.each(fieldAndHash, function (i, nameAndDefault) {
+            
+            var name = nameAndDefault[0];
+            var input = $('<input/>', {
                 type: 'text',
                 name: name,
                 id: name,
-                value: def,
+                value: nameAndDefault[1],
                 class: 'form-control input-sm'
             });
             
             if (i < fieldAndHash.length - 1) {
                 input.change(computeHash);
             }
-            else
+            else {
                 input.addClass('hash-field');
+            }
             
-            div = $('<div/>', {class: 'form-group'});
+            var div = $('<div/>', {class: 'form-group'});
             div.append($('<label/>', {
                     text: name,
                     id: name + '_label',
@@ -148,7 +147,7 @@
                 $('<div/>', {class: 'col-sm-8'}).append(input)
             );
             form.append(div);
-        }
+        });
         
         form.append($('<input/>', {
             type: 'submit',
@@ -162,22 +161,24 @@
         function makeClickHandler(bank) {
             return function () {
                 
-                for (field in bank)
-                    if (field[0] == 'A')
-                        $('#'+field).val(bank[field]);
-                        
+                $.each(bank, function (field, value) {
+                    if (field[0] === 'A') {
+                        $('#'+field).val(value);
+                    }
+                });
+                
                 $('#B02K_KEYVERS').val(bank.A01Y_KEYVERS);
                 $('#B02K_VERS').val(bank.A01Y_VERS);
                 $('#B02K_TIMESTMP').val(bank.number + timeStamp());
                 
                 $('#request-url').val(bank.url).change();
                 $('#secret-key').val(bank.secret).change();
-            }
+            };
         }
         
-        for (i in bankData) {
-            bank = bankData[i];
-            input = $('<input/>', {
+        $.each(bankData, function (i, bank) {
+            
+            var input = $('<input/>', {
                 type: 'radio',
                 name: 'bank-id',
                 value: bank.id
@@ -188,12 +189,12 @@
                     $('<label/>').append(input, $('<span/>', { text: bank.name }))
                 )
             );
-        }
+        });
     }
     
     function setRequestType(val) {
         
-        if (val == 'request') {
+        if (val === 'request') {
             $('.tupas-request').show();
             $('.tupas-response').hide();
             $('#tupas-request-tab').addClass('active');
@@ -208,13 +209,13 @@
     }
     
     function timeStamp() {
-        time = new Date((new Date()).getTime() + (new Date()).getTimezoneOffset() * -60000).toISOString();
+        var time = new Date((new Date()).getTime() + (new Date()).getTimezoneOffset() * -60000).toISOString();
         return time.replace(/[\-:T\.Z]/g, '');
     }
     
-    clientAddress = 'http://localhost:3000/tupas/';
+    var clientAddress = 'http://localhost:3000/tupas/';
     
-    requestFields = [
+    var requestFields = [
         ['A01Y_ACTION_ID',  '701'],
         ['A01Y_VERS',       '0002'],
         ['A01Y_RCVID',      ''],
@@ -228,7 +229,7 @@
         ['A01Y_ALG',        '03']
     ];
     
-    responseFields = [
+    var responseFields = [
         ['B02K_VERS',       '0002'],
         ['B02K_TIMESTMP',   ''], // bankId + timeStamp()
         ['B02K_IDNBR',      '123456'],
@@ -243,7 +244,7 @@
     ];
     
     // Data from https://github.com/reaktor/node-tupas/blob/master/config.json
-    bankData = [{
+    var bankData = [{
         "id" : "tapiola",
         "name" : "Tapiola",
         "url" : "https://pankki.tapiola.fi/service/identify",
