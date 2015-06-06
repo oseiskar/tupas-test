@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/sha256.js"></script>
+    <script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/hmac-sha256.js"></script>
+    <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"/>
+    <title>TUPAS test</title>
+</head>
+    <body style="margin: 5%">
+        
+        <div class="row" style="margin-bottom: 20px">
+            <div class="col-sm-11 col-sm-offset-1">
+                <ul class="nav nav-tabs">
+                  <li role="presentation" id="tupas-request-tab"><a href="javascript:void(0)"><h4>Client request</h4></a></li>
+                  <li role="presentation" id="tupas-response-tab"><a href="javascript:void(0)"><h4>Bank response</h4></a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-4 col-sm-push-7">
+                <div class="form-group">
+                    <label>Shared secret</label>
+                    <input id="secret-key" class="form-control" type="text" value=""/>
+                </div>
+                <div class="form-group">
+                    <label>Bank preset</label>
+                    <div id="bank-list">
+                    </div>
+                </div>
+                <hr class="visible-xs"></hr>
+            </div>
+            <div class="col-sm-7 col-sm-pull-4">
+                <div class="form-horizontal">
+                    <div class="form-group tupas-request">
+                        <label class="control-label col-sm-4">Bank URL</label>
+                        <div class="col-sm-8">
+                            <input id="request-url" class="form-control" type="text" value=""/>
+                        </div>
+                    </div>
+                    <div class="form-group tupas-response">
+                        <label class="control-label col-sm-4 text-primary">Client URL</label>
+                        <div class="col-sm-8">
+                            <input id="response-url" class="form-control" type="text" value=""/>
+                        </div>
+                    </div>
+                </div>
+                <form id="tupas-request-form" method="post" class="tupas-request form-horizontal clearfix">
+                </form>
+                <form id="tupas-response-form" method="get" class="tupas-response form-horizontal clearfix">
+                </form>
+            </div>
+        </div>
+    </body>
+<script>
+    
+    $(document).ready(function(){
+        
+        $('.tupas-request').hide();
+        $('.tupas-response').hide();
+        
+        writeForm($('#tupas-request-form'), requestFields, 'A01Y_MAC');
+        writeForm($('#tupas-response-form'), responseFields, 'B02K_MAC');
+        
+        $('#B02K_CUSTNAME_label').addClass('text-primary');
+        $('#B02K_CUSTID_label').addClass('text-primary');
+        $('#A01Y_RETLINK_label').addClass('text-primary');
+        
+        $('#tupas-request-tab').click(function() { setRequestType('request') });
+        $('#tupas-response-tab').click(function() { setRequestType('response') });
+        
+        writeBankList($('#bank-list'));
+        
+        $('#response-url').change(function (){
+            $('#tupas-response-form').attr('action', $('#response-url').val());
+            $('#tupas-response-form').find('input[type=submit]').removeClass('disabled');
+        });
+        
+        $('#request-url').change(function (el){
+            $('#tupas-request-form').attr('action', $('#request-url').val());
+            $('#tupas-request-form').find('input[type=submit]').removeClass('disabled');
+        });
+        
+        $('#A01Y_RETLINK').change(function() {
+            responsePath = $('#response-path').val();
+            $('#response-url').val($('#A01Y_RETLINK').val()).change();
+        });
+        $('#A01Y_RETLINK').change();
+        
+        $('#secret-key').change(function() {
+            // trigger changes to recompute hash
+            $('#A01Y_ACTION_ID').change();
+            $('#B02K_VERS').change();
+        });
+        
+        setRequestType('request');
+        
+    });
+    
+    function writeForm(form, fieldsWithoutHash, hashField) {
+        
+        fieldAndHash =  fieldsWithoutHash.concat([[hashField, '']]);
+        
+        function makeHashComputer(fields, formElement) {
+            return function () {
+            
+                shared_secret = $('#secret-key').val();
+                
+                str = '';
+                for (i in fields)
+                    str += $('#'+fields[i][0]).val() + '&';
+                    
+                //console.log(str);
+                hash = CryptoJS.SHA256(str + shared_secret + '&').toString().toUpperCase();
+                //console.log(hash);
+                
+                formElement.find('.hash-field').val(hash);
+            }
+        }
+        
+        computeHash = makeHashComputer(fieldsWithoutHash.slice(), form);
+        
+        for (i in fieldAndHash) {
+            name_and_default = fieldAndHash[i];
+            name = name_and_default[0];
+            def = name_and_default[1];
+            input = $('<input/>', {
+                type: 'text',
+                name: name,
+                id: name,
+                value: def,
+                class: 'form-control input-sm'
+            });
+            
+            if (i < fieldAndHash.length - 1) {
+                input.change(computeHash);
+            }
+            else
+                input.addClass('hash-field');
+            
+            div = $('<div/>', {class: 'form-group'});
+            div.append($('<label/>', {
+                    text: name,
+                    id: name + '_label',
+                    class: 'control-label col-sm-4'}),
+                $('<div/>', {class: 'col-sm-8'}).append(input)
+            );
+            form.append(div);
+        }
+        
+        form.append($('<input/>', {
+            type: 'submit',
+            value: 'Submit',
+            class: 'btn btn-primary pull-right btn-lg disabled'
+        }));
+    }
+    
+    function writeBankList(el) {
+    
+        function makeClickHandler(bank) {
+            return function () {
+                
+                for (field in bank)
+                    if (field[0] == 'A')
+                        $('#'+field).val(bank[field]);
+                        
+                $('#B02K_KEYVERS').val(bank.A01Y_KEYVERS);
+                $('#B02K_VERS').val(bank.A01Y_VERS);
+                $('#B02K_TIMESTMP').val(bank.number + timeStamp());
+                
+                $('#request-url').val(bank.url).change();
+                $('#secret-key').val(bank.secret).change();
+            }
+        }
+        
+        for (i in bankData) {
+            bank = bankData[i];
+            input = $('<input/>', {
+                type: 'radio',
+                name: 'bank-id',
+                value: bank.id
+            });
+            input.change(makeClickHandler(bank));
+            el.append(
+                $('<div/>', { class: 'radio' }).append(
+                    $('<label/>').append(input, $('<span/>', { text: bank.name }))
+                )
+            );
+        }
+    }
+    
+    function setRequestType(val) {
+        
+        if (val == 'request') {
+            $('.tupas-request').show();
+            $('.tupas-response').hide();
+            $('#tupas-request-tab').addClass('active');
+            $('#tupas-response-tab').removeClass('active');
+        }
+        else {
+            $('.tupas-request').hide();
+            $('.tupas-response').show();
+            $('#tupas-request-tab').removeClass('active');
+            $('#tupas-response-tab').addClass('active');
+        }
+    }
+    
+    function timeStamp() {
+        time = new Date((new Date()).getTime() + (new Date()).getTimezoneOffset() * -60000).toISOString();
+        return time.replace(/[\-:T\.Z]/g, '');
+    }
+    
+    clientAddress = 'http://localhost:3000/tupas/';
+    
+    requestFields = [
+        ['A01Y_ACTION_ID',  '701'],
+        ['A01Y_VERS',       '0002'],
+        ['A01Y_RCVID',      ''],
+        ['A01Y_LANGCODE',   'FI'],
+        ['A01Y_STAMP',      timeStamp()], // timeStamp()
+        ['A01Y_IDTYPE',     '01'],
+        ['A01Y_RETLINK',    clientAddress + 'return'],
+        ['A01Y_CANLINK',    clientAddress + 'cancel'],
+        ['A01Y_REJLINK',    clientAddress + 'reject'],
+        ['A01Y_KEYVERS',    '0001'],
+        ['A01Y_ALG',        '03']
+    ];
+    
+    responseFields = [
+        ['B02K_VERS',       '0002'],
+        ['B02K_TIMESTMP',   ''], // bankId + timeStamp()
+        ['B02K_IDNBR',      '123456'],
+        ['B02K_STAMP',      timeStamp()],
+        ['B02K_CUSTNAME',   'ESIMERKKI ESKO'],
+        ['B02K_KEYVERS',    '0001'],
+        ['B02K_ALG',        '03'],
+        ['B02K_CUSTID',     '010203-004X'],
+        ['B02K_CUSTTYPE',   '01'] //,
+        //['B02K_USERID', ''],
+        //['B02K_USERNAME', '']
+    ];
+    
+    // Data from https://github.com/reaktor/node-tupas/blob/master/config.json
+    bankData = [{
+        "id" : "tapiola",
+        "name" : "Tapiola",
+        "url" : "https://pankki.tapiola.fi/service/identify",
+        "A01Y_VERS" : "0002",
+        "A01Y_KEYVERS" : "0001",
+        "number" : "360",
+        "A01Y_RCVID" : "TAPTUPASID",
+        "secret": "PAPAKAIJU"
+      },
+      {
+        "id" : "danskebank",
+        "name" : "DanskeBank",
+        "url" : "https://verkkopankki.sampopankki.fi/SP/tupaha/TupahaApp",
+        "A01Y_VERS" : "0003",
+        "A01Y_KEYVERS" : "0001",
+        "number" : "800",
+        "A01Y_RCVID" : "000000000000",
+        "secret": "pAwfvWTD7g9etWGNTVR5zCj5EhHt5yuHdLrxQH2BD5gZxk7xBUrfqubtYv8vZvs4"
+      },
+      {
+        "id" : "handelsbanken",
+        "name" : "Handelsbanken",
+        "url" : "https://tunnistepalvelu.samlink.fi/TupasTunnistus/SHBtupas.html",
+        "A01Y_VERS" : "0002",
+        "A01Y_KEYVERS" : "0001",
+        "number" : "310",
+        "A01Y_RCVID" : "1111111111111",
+        "secret": "11111111111111111111"
+      },
+      {
+        "id" : "nordea",
+        "name" : "Nordea",
+        "url" : "https://solo3.nordea.fi/cgi-bin/SOLO3011",
+        "A01Y_VERS" : "0002",
+        "A01Y_KEYVERS" : "0001",
+        "number" : "200",
+        "A01Y_RCVID" : "87654321",
+        "secret": "LEHTI"
+      },
+      {
+        "id" : "op",
+        "name" : "Osuuspankkiryhmä",
+        "url" : "https://kultaraha.op.fi/cgi-bin/krcgi",
+        "A01Y_VERS" : "0003",
+        "A01Y_KEYVERS" : "0001",
+        "number" : "500",
+        "A01Y_RCVID" : "Esittelymyyja",
+        "secret": "Esittelykauppiaansalainentunnus"
+      },
+      {
+        "id" : "aktia",
+        "name" : "Aktia",
+        "url" : "https://tunnistepalvelu.samlink.fi/TupasTunnistus/TupasServlet",
+        "A01Y_VERS" : "0002",
+        "A01Y_KEYVERS" : "0001",
+        "number" : "400",
+        "A01Y_RCVID" : "1111111111111",
+        "secret": "11111111111111111111"
+      },
+      {
+        "id" : "alandsbanken",
+        "name" : "Ålandsbanken",
+        "url" : "https://online.alandsbanken.fi/service/identify",
+        "A01Y_VERS" : "0002",
+        "A01Y_KEYVERS" : "0001",
+        "number" : "600",
+        "A01Y_RCVID" : "AABTUPASID",
+        "secret": "PAPAGAJA"
+      },
+      {
+        "id" : "spankki",
+        "name" : "S-Pankki",
+        "url" : "https://online.s-pankki.fi/service/identify",
+        "A01Y_VERS" : "0002",
+        "A01Y_KEYVERS" : "0001",
+        "number" : "390",
+        "A01Y_RCVID" : "SPANKKITUPAS",
+        "secret": "SPANKKI"
+      },
+      {
+        "id" : "saastopankki",
+        "name" : "Säästöpankki",
+        "url" : "https://tupas.saastopankki.fi",
+        "A01Y_VERS" : "0002",
+        "A01Y_KEYVERS" : "0001",
+        "number" : "420",
+        "A01Y_RCVID" : "1111111111111",
+        "secret": "11111111111111111111"
+      },
+      {
+        "id" : "poppankki",
+        "name" : "POPPankki",
+        "url" : "https://tupas.poppankki.fi",
+        "A01Y_VERS" : "0002",
+        "A01Y_KEYVERS" : "0001",
+        "number" : "430",
+        "A01Y_RCVID" : "1111111111111",
+        "secret": "11111111111111111111"
+      }
+    ];
+
+</script>
+</html>
