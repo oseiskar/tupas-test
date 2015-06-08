@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
+    <meta charset="ISO-8859-1">
     <script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/sha256.js"></script>
     <script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/hmac-sha256.js"></script>
     <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
@@ -69,8 +69,8 @@
         $('#B02K_CUSTID_label').addClass('text-primary');
         $('#A01Y_RETLINK_label').addClass('text-primary');
         
-        $('#tupas-request-tab').click(function()Â { setRequestType('request'); });
-        $('#tupas-response-tab').click(function()Â { setRequestType('response'); });
+        $('#tupas-request-tab').click(function() { setRequestType('request'); });
+        $('#tupas-response-tab').click(function() { setRequestType('response'); });
         
         writeBankList($('#bank-list'));
         
@@ -99,6 +99,11 @@
         
     });
     
+    function upperCaseHexSha256ofLatin1(str) {
+        var latin1 = CryptoJS.enc.Latin1.parse(str);
+        return CryptoJS.SHA256(latin1).toString().toUpperCase();
+    }
+    
     function writeForm(form, fieldsWithoutHash, hashField) {
         
         var fieldAndHash =  fieldsWithoutHash.concat([[hashField, '']]);
@@ -112,7 +117,7 @@
                 
                 //console.log(str);
                 var sharedSecret = $('#secret-key').val();
-                var hash = CryptoJS.SHA256(str + sharedSecret + '&').toString().toUpperCase();
+                var hash = upperCaseHexSha256ofLatin1(str + sharedSecret + '&');
                 //console.log(hash);
                 
                 formElement.find('.hash-field').val(hash);
@@ -221,7 +226,7 @@
         ['A01Y_RCVID',      ''],
         ['A01Y_LANGCODE',   'FI'],
         ['A01Y_STAMP',      timeStamp()], // timeStamp()
-        ['A01Y_IDTYPE',     '01'],
+        ['A01Y_IDTYPE',     '12'],
         ['A01Y_RETLINK',    clientAddress + 'return'],
         ['A01Y_CANLINK',    clientAddress + 'cancel'],
         ['A01Y_REJLINK',    clientAddress + 'reject'],
@@ -286,7 +291,7 @@
       },
       {
         "id" : "op",
-        "name" : "OsuuspankkiryhmÃ¤",
+        "name" : "Osuuspankkiryhmä",
         "url" : "https://kultaraha.op.fi/cgi-bin/krcgi",
         "A01Y_VERS" : "0003",
         "A01Y_KEYVERS" : "0001",
@@ -306,7 +311,7 @@
       },
       {
         "id" : "alandsbanken",
-        "name" : "Ã…landsbanken",
+        "name" : "Ålandsbanken",
         "url" : "https://online.alandsbanken.fi/service/identify",
         "A01Y_VERS" : "0002",
         "A01Y_KEYVERS" : "0001",
@@ -326,7 +331,7 @@
       },
       {
         "id" : "saastopankki",
-        "name" : "SÃ¤Ã¤stÃ¶pankki",
+        "name" : "Säästöpankki",
         "url" : "https://tupas.saastopankki.fi",
         "A01Y_VERS" : "0002",
         "A01Y_KEYVERS" : "0001",
