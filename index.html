@@ -8,52 +8,51 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"/>
     <title>TUPAS test</title>
 </head>
-    <body style="margin: 5%">
-        
-        <div class="row" style="margin-bottom: 20px">
-            <div class="col-sm-11 col-sm-offset-1">
-                <ul class="nav nav-tabs">
-                  <li role="presentation" id="tupas-request-tab"><a href="javascript:void(0)"><h4>Client request</h4></a></li>
-                  <li role="presentation" id="tupas-response-tab"><a href="javascript:void(0)"><h4>Bank response</h4></a></li>
-                  <li role="presentation" class="pull-right"><a href="https://github.com/oseiskar/tupas-test"><h4>?</h4></a></li>
-                </ul>
-            </div>
+<body style="margin: 5%">
+    <div class="row" style="margin-bottom: 20px">
+        <div class="col-sm-11 col-sm-offset-1">
+            <ul class="nav nav-tabs">
+              <li role="presentation" id="tupas-request-tab"><a href="javascript:void(0)"><h4>Client request</h4></a></li>
+              <li role="presentation" id="tupas-response-tab"><a href="javascript:void(0)"><h4>Bank response</h4></a></li>
+              <li role="presentation" class="pull-right"><a href="https://github.com/oseiskar/tupas-test/blob/master/README.md"><h4>?</h4></a></li>
+            </ul>
         </div>
-        <div class="row">
-            <div class="col-sm-4 col-sm-push-7">
-                <div class="form-group">
-                    <label>Shared secret</label>
-                    <input id="secret-key" class="form-control" type="text" value=""/>
-                </div>
-                <div class="form-group">
-                    <label>Bank preset</label>
-                    <div id="bank-list">
-                    </div>
-                </div>
-                <hr class="visible-xs"></hr>
+    </div>
+    <div class="row">
+        <div class="col-sm-4 col-sm-push-7">
+            <div class="form-group">
+                <label>Shared secret</label>
+                <input id="secret-key" class="form-control" type="text" value=""/>
             </div>
-            <div class="col-sm-7 col-sm-pull-4">
-                <div class="form-horizontal">
-                    <div class="form-group tupas-request">
-                        <label class="control-label col-sm-4">Bank URL</label>
-                        <div class="col-sm-8">
-                            <input id="request-url" class="form-control" type="text" value=""/>
-                        </div>
-                    </div>
-                    <div class="form-group tupas-response">
-                        <label class="control-label col-sm-4 text-primary">Client URL</label>
-                        <div class="col-sm-8">
-                            <input id="response-url" class="form-control" type="text" value=""/>
-                        </div>
-                    </div>
+            <div class="form-group">
+                <label>Bank preset</label>
+                <div id="bank-list">
                 </div>
-                <form id="tupas-request-form" method="post" class="tupas-request form-horizontal clearfix">
-                </form>
-                <form id="tupas-response-form" method="get" class="tupas-response form-horizontal clearfix">
-                </form>
             </div>
+            <hr class="visible-xs"></hr>
         </div>
-    </body>
+        <div class="col-sm-7 col-sm-pull-4">
+            <div class="form-horizontal">
+                <div class="form-group tupas-request">
+                    <label class="control-label col-sm-4">Bank URL</label>
+                    <div class="col-sm-8">
+                        <input id="request-url" class="form-control" type="text" value=""/>
+                    </div>
+                </div>
+                <div class="form-group tupas-response">
+                    <label class="control-label col-sm-4 text-primary">Client URL</label>
+                    <div class="col-sm-8">
+                        <input id="response-url" class="form-control" type="text" value=""/>
+                    </div>
+                </div>
+            </div>
+            <form id="tupas-request-form" method="post" class="tupas-request form-horizontal clearfix" accept-charset="ISO-8859-1">
+            </form>
+            <form id="tupas-response-form" method="get" class="tupas-response form-horizontal clearfix" accept-charset="ISO-8859-1">
+            </form>
+        </div>
+    </div>
+</body>
 <script>
    "use strict";
 
@@ -191,7 +190,7 @@
             input.change(makeClickHandler(bank));
             el.append(
                 $('<div/>', { class: 'radio' }).append(
-                    $('<label/>').append(input, $('<span/>', { text: bank.name }))
+                    $('<label/>').append(input, $('<span/>', { html: bank.name }))
                 )
             );
         });
@@ -291,7 +290,7 @@
       },
       {
         "id" : "op",
-        "name" : "Osuuspankkiryhmä",
+        "name" : "Osuuspankkiryhm&auml;",
         "url" : "https://kultaraha.op.fi/cgi-bin/krcgi",
         "A01Y_VERS" : "0003",
         "A01Y_KEYVERS" : "0001",
@@ -311,7 +310,7 @@
       },
       {
         "id" : "alandsbanken",
-        "name" : "Ålandsbanken",
+        "name" : "&Aring;landsbanken",
         "url" : "https://online.alandsbanken.fi/service/identify",
         "A01Y_VERS" : "0002",
         "A01Y_KEYVERS" : "0001",
@@ -331,7 +330,7 @@
       },
       {
         "id" : "saastopankki",
-        "name" : "Säästöpankki",
+        "name" : "S&auml;&auml;st&ouml;pankki",
         "url" : "https://tupas.saastopankki.fi",
         "A01Y_VERS" : "0002",
         "A01Y_KEYVERS" : "0001",
