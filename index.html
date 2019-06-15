@@ -7,6 +7,15 @@
     <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"/>
     <title>TUPAS test</title>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-142197325-1"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'UA-142197325-1');
+    </script>
 </head>
 <body style="margin: 5%">
     <div class="row" style="margin-bottom: 20px">
@@ -60,73 +69,73 @@
 
         $('.tupas-request').hide();
         $('.tupas-response').hide();
-        
+
         writeForm($('#tupas-request-form'), requestFields, 'A01Y_MAC');
         writeForm($('#tupas-response-form'), responseFields, 'B02K_MAC');
-        
+
         $('#B02K_CUSTNAME_label').addClass('text-primary');
         $('#B02K_CUSTID_label').addClass('text-primary');
         $('#A01Y_RETLINK_label').addClass('text-primary');
-        
+
         $('#tupas-request-tab').click(function() { setRequestType('request'); });
         $('#tupas-response-tab').click(function() { setRequestType('response'); });
-        
+
         writeBankList($('#bank-list'));
-        
+
         $('#response-url').change(function (){
             $('#tupas-response-form').attr('action', $('#response-url').val());
             $('#tupas-response-form').find('input[type=submit]').removeClass('disabled');
         });
-        
+
         $('#request-url').change(function (){
             $('#tupas-request-form').attr('action', $('#request-url').val());
             $('#tupas-request-form').find('input[type=submit]').removeClass('disabled');
         });
-        
+
         $('#A01Y_RETLINK').change(function() {
             $('#response-url').val($('#A01Y_RETLINK').val()).change();
         });
         $('#A01Y_RETLINK').change();
-        
+
         $('#secret-key').change(function() {
             // trigger changes to recompute hash
             $('#A01Y_ACTION_ID').change();
             $('#B02K_VERS').change();
         });
-        
+
         setRequestType('request');
-        
+
     });
-    
+
     function upperCaseHexSha256ofLatin1(str) {
         var latin1 = CryptoJS.enc.Latin1.parse(str);
         return CryptoJS.SHA256(latin1).toString().toUpperCase();
     }
-    
+
     function writeForm(form, fieldsWithoutHash, hashField) {
-        
+
         var fieldAndHash =  fieldsWithoutHash.concat([[hashField, '']]);
-        
+
         function makeHashComputer(fields, formElement) {
             return function () {
-            
+
                 var str = $.map(fields, function (field) {
                     return $('#'+field[0]).val();
                 }).join('&') + '&';
-                
+
                 //console.log(str);
                 var sharedSecret = $('#secret-key').val();
                 var hash = upperCaseHexSha256ofLatin1(str + sharedSecret + '&');
                 //console.log(hash);
-                
+
                 formElement.find('.hash-field').val(hash);
             };
         }
-        
+
         var computeHash = makeHashComputer(fieldsWithoutHash.slice(), form);
-        
+
         $.each(fieldAndHash, function (i, nameAndDefault) {
-            
+
             var name = nameAndDefault[0];
             var input = $('<input/>', {
                 type: 'text',
@@ -135,14 +144,14 @@
                 value: nameAndDefault[1],
                 class: 'form-control input-sm'
             });
-            
+
             if (i < fieldAndHash.length - 1) {
                 input.change(computeHash);
             }
             else {
                 input.addClass('hash-field');
             }
-            
+
             var div = $('<div/>', {class: 'form-group'});
             div.append($('<label/>', {
                     text: name,
@@ -152,36 +161,36 @@
             );
             form.append(div);
         });
-        
+
         form.append($('<input/>', {
             type: 'submit',
             value: 'Submit',
             class: 'btn btn-primary pull-right btn-lg disabled'
         }));
     }
-    
+
     function writeBankList(el) {
-    
+
         function makeClickHandler(bank) {
             return function () {
-                
+
                 $.each(bank, function (field, value) {
                     if (field[0] === 'A') {
                         $('#'+field).val(value);
                     }
                 });
-                
+
                 $('#B02K_KEYVERS').val(bank.A01Y_KEYVERS);
                 $('#B02K_VERS').val(bank.A01Y_VERS);
                 $('#B02K_TIMESTMP').val(bank.number + timeStamp());
-                
+
                 $('#request-url').val(bank.url).change();
                 $('#secret-key').val(bank.secret).change();
             };
         }
-        
+
         $.each(bankData, function (i, bank) {
-            
+
             var input = $('<input/>', {
                 type: 'radio',
                 name: 'bank-id',
@@ -195,9 +204,9 @@
             );
         });
     }
-    
+
     function setRequestType(val) {
-        
+
         if (val === 'request') {
             $('.tupas-request').show();
             $('.tupas-response').hide();
@@ -211,14 +220,14 @@
             $('#tupas-response-tab').addClass('active');
         }
     }
-    
+
     function timeStamp() {
         var time = new Date((new Date()).getTime() + (new Date()).getTimezoneOffset() * -60000).toISOString();
         return time.replace(/[\-:T\.Z]/g, '');
     }
-    
+
     var clientAddress = 'http://localhost:3000/tupas/';
-    
+
     var requestFields = [
         ['A01Y_ACTION_ID',  '701'],
         ['A01Y_VERS',       '0002'],
@@ -232,7 +241,7 @@
         ['A01Y_KEYVERS',    '0001'],
         ['A01Y_ALG',        '03']
     ];
-    
+
     var responseFields = [
         ['B02K_VERS',       '0002'],
         ['B02K_TIMESTMP',   ''], // bankId + timeStamp()
@@ -246,7 +255,7 @@
         //['B02K_USERID', ''],
         //['B02K_USERNAME', '']
     ];
-    
+
     // Data from https://github.com/reaktor/node-tupas/blob/master/config.json
     var bankData = [{
         "id" : "tapiola",
